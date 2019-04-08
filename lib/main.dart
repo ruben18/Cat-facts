@@ -4,9 +4,11 @@ import 'package:cat_facts/services/cat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cat_facts/model/catFact_model.dart';
+import 'package:toast/toast.dart';
+
 
 void main() => runApp(
-      FavoritesInherited(child: MyApp()),
+      FavoritesInherited(favorites: [], child: MyApp()),
     );
 
 class MyApp extends StatelessWidget {
@@ -19,6 +21,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => ListCatFacts(),
+        '/favorites': (context) => ListFavorites(),
       },
     );
   }
@@ -39,7 +42,14 @@ class ListCatFacts extends StatelessWidget {
         context.ancestorWidgetOfExactType(FavoritesInherited);
 
     return Scaffold(
-      appBar: AppBar(title: Text("A list of cat facts")),
+      appBar: AppBar(title: Text("A list of cat facts"), actions: <Widget>[
+        IconButton(
+          icon: Icon(Icons.favorite),
+          onPressed: () {
+            Navigator.pushNamed(context, "/favorites");
+          },
+        ),
+      ]),
       body: FutureBuilder<List<CatFact>>(
           future: getAllCatFacts(),
           builder: (context, snapshot) {
@@ -64,7 +74,7 @@ class ListCatFacts extends StatelessWidget {
                       },
                       child: new ListTile(
                         title: Text(catFacts[index].text),
-                        leading:  Icon(Icons.add_circle),
+                        leading: Icon(Icons.info),
                       ),
                     );
                   });
@@ -107,14 +117,49 @@ class CatFactInfo extends StatelessWidget {
             ),
           ),
           Align(
-              alignment: Alignment.topLeft,
-              child: Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Text("Text: " + this.catFact.text),
-                ),
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Text("Text: " + this.catFact.text),
+            ),
           ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: EdgeInsets.all(10.0),
+              child: new GestureDetector(
+                onTap: () {
+                  favorite.favorites.add(this.catFact);
+                  Toast.show("Cat fact added to favorites.",context);
+                },
+                child: Icon(Icons.favorite),
+              ),
+            ),
+          )
         ],
       ),
+    );
+  }
+}
+
+class ListFavorites extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    FavoritesInherited favorite =
+        context.ancestorWidgetOfExactType(FavoritesInherited);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("A list of my favorites cat facts"),
+      ),
+      body: ListView.builder(
+          itemCount: favorite.favorites.length,
+          itemBuilder: (BuildContext context, int index) {
+            return new ListTile(
+              title: Text(favorite.favorites[index].text),
+              leading: Icon(Icons.favorite),
+            );
+          }),
     );
   }
 }
