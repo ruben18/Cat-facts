@@ -22,7 +22,7 @@ String allcatFactsToJson(List<CatFact> data) {
 }
 
 class CatFact {
-  int id;
+  String id;
   String text;
 
   CatFact({
@@ -31,7 +31,7 @@ class CatFact {
   });
 
   factory CatFact.fromJson(Map<String, dynamic> json) => new CatFact(
-    id: json["id"],
+    id: json["_id"],
     text: json["text"],
   );
 

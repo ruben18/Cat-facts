@@ -5,26 +5,29 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cat_facts/model/catFact_model.dart';
 
-const jsonCatFact =
-    '{"text": "In an average year, cat owners in the United States spend over 2 billion on cat food.","_id":"591f98803b90f7150a19c229"}';
-
-void main() => runApp(MyApp());
+void main() => runApp(
+      FavoritesInherited(child: MyApp()),
+    );
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(home: Home());
+    FavoritesInherited favorite =
+        context.ancestorWidgetOfExactType(FavoritesInherited);
+    return new MaterialApp(
+      initialRoute: '/',
+      routes: {
+        '/': (context) => ListCatFacts(),
+      },
+    );
   }
 }
 
-class Home extends StatelessWidget {
+class ListCatFacts extends StatelessWidget {
   callAPI() {
     getAllCatFacts().then((response) {
-      if (response.statusCode > 200)
-        print(response.body);
-      else
-        print(response.statusCode);
+      print(response);
     }).catchError((error) {
       print('error : $error');
     });
@@ -32,28 +35,98 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    FavoritesInherited favorite =
+        context.ancestorWidgetOfExactType(FavoritesInherited);
+
     return Scaffold(
-        appBar: AppBar(
-          title: Text("A list of cat facts")
-        ),
-        body: FutureBuilder<List<CatFact>>(
-            future: getAllCatFacts(),
-            builder: (context, snapshot) {
-              callAPI();
-              if (snapshot.connectionState == ConnectionState.done) {
-                if (snapshot.hasError) {
-                  return Text("Error");
-                }
-                List<CatFact> catFacts = snapshot.data;
-                return ListView.builder(
-                    itemCount: catFacts.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return ListTile(
-                        title: new Text(catFacts[index].text),
-                      );
-                    });
-              } else
-                return CircularProgressIndicator();
-            }));
+      appBar: AppBar(title: Text("A list of cat facts")),
+      body: FutureBuilder<List<CatFact>>(
+          future: getAllCatFacts(),
+          builder: (context, snapshot) {
+            callAPI();
+            if (snapshot.connectionState == ConnectionState.done) {
+              if (snapshot.hasError) {
+                return Text("Error");
+              }
+              List<CatFact> catFacts = snapshot.data;
+              return ListView.builder(
+                  itemCount: catFacts.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                CatFactInfo(catFact: catFacts[index]),
+                          ),
+                        );
+                      },
+                      child: new ListTile(
+                        title: Text(catFacts[index].text),
+                        leading:  Icon(Icons.add_circle),
+                      ),
+                    );
+                  });
+            } else
+              return CircularProgressIndicator();
+          }),
+    );
   }
+}
+
+class CatFactInfo extends StatelessWidget {
+  CatFact catFact;
+  CatFactInfo({this.catFact});
+
+  @override
+  Widget build(BuildContext context) {
+    FavoritesInherited favorite =
+        context.ancestorWidgetOfExactType(FavoritesInherited);
+
+    return Scaffold(
+      appBar: AppBar(title: Text("Cat Fact")),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Transform.scale(
+                scale: 2.0,
+                child: Text("A Cat Fact"),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Text("#ID: " + this.catFact.id.toString()),
+            ),
+          ),
+          Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Text("Text: " + this.catFact.text),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class FavoritesInherited extends InheritedWidget {
+  final List<CatFact> favorites;
+
+  const FavoritesInherited({
+    this.favorites,
+    Widget child,
+  }) : super(child: child);
+
+  @override
+  bool updateShouldNotify(FavoritesInherited oldWidget) => true;
 }
